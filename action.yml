@@ -66,10 +66,6 @@ inputs:
           ["instrumented-jars", "caches/jars-*/*/"],
           ["kotlin-dsl", "caches/*/kotlin-dsl/*/*/"]
         ]
-  token:
-    description: Used to authenticate to GH API
-    required: false
-    default: ${{secrets.GITHUB_TOKEN}}
 
 outputs:
   build-scan-url:
