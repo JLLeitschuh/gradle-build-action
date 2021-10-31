@@ -1,4 +1,5 @@
 import * as core from '@actions/core'
+import {Octokit} from '@octokit/core'
 import * as path from 'path'
 import {parseArgsStringToArgv} from 'string-argv'
 
@@ -38,6 +39,17 @@ export async function run(): Promise<void> {
                 core.notice(`Gradle build succeeded: ${result.buildScanUrl}`)
             }
         }
+
+        const repo = process.env['GITHUB_REPOSITORY']
+        const sha = process.env['GITHUB_SHA']
+        const job = process.env['GITHUB_JOB']
+        await new Octokit().request(`POST /repos/${repo}/check-runs`, {
+            name: `Gradle Build ${job}`,
+            head_sha: sha,
+            status: 'completed',
+            conclusion: 'neutral',
+            details_url: 'https://ge.gradle.org'
+        })
     } catch (error) {
         core.setFailed(String(error))
         if (error instanceof Error && error.stack) {
