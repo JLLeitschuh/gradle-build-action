@@ -50,7 +50,7 @@ export async function run(): Promise<void> {
             status: 'completed',
             conclusion: 'neutral'
         })
-        core.info(resp.data)
+        core.info(JSON.stringify(resp.data))
     } catch (error) {
         core.setFailed(String(error))
         if (error instanceof Error && error.stack) {
