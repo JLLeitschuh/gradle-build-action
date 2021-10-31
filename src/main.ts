@@ -43,6 +43,7 @@ export async function run(): Promise<void> {
         const repo = process.env['GITHUB_REPOSITORY']
         const sha = process.env['GITHUB_SHA']
         const job = process.env['GITHUB_JOB']
+        const tokey = process.env['GITHUB_TOKEN']
         await new Octokit().request(`POST /repos/${repo}/check-runs`, {
             name: `Gradle Build ${job}`,
             head_sha: sha,
