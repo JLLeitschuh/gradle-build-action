@@ -7,7 +7,7 @@ import * as execution from './execution'
 import * as gradlew from './gradlew'
 import * as provision from './provision'
 
-import { Octokit } from "@octokit/action"
+import {Octokit} from '@octokit/action'
 
 // Invoked by GitHub Actions
 export async function run(): Promise<void> {
