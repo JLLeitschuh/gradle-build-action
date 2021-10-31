@@ -1,5 +1,4 @@
 import * as core from '@actions/core'
-import {Octokit} from '@octokit/core'
 import * as path from 'path'
 import {parseArgsStringToArgv} from 'string-argv'
 
@@ -7,6 +6,8 @@ import * as caches from './caches'
 import * as execution from './execution'
 import * as gradlew from './gradlew'
 import * as provision from './provision'
+
+import { Octokit } from "@octokit/action"
 
 // Invoked by GitHub Actions
 export async function run(): Promise<void> {
@@ -43,13 +44,11 @@ export async function run(): Promise<void> {
         const repo = process.env['GITHUB_REPOSITORY']
         const sha = process.env['GITHUB_SHA']
         const job = process.env['GITHUB_JOB']
-        const tokey = process.env['GITHUB_TOKEN']
         await new Octokit().request(`POST /repos/${repo}/check-runs`, {
             name: `Gradle Build ${job}`,
             head_sha: sha,
             status: 'completed',
-            conclusion: 'neutral',
-            details_url: 'https://ge.gradle.org'
+            conclusion: 'neutral'
         })
     } catch (error) {
         core.setFailed(String(error))
