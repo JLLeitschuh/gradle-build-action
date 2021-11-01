@@ -164,6 +164,7 @@ export class GradleUserHomeCache extends AbstractCache {
         artifactPath: string,
         listener: CacheEntryListener
     ): Promise<void> {
+        core.info(`Saving artifact bundle ${bundle} with pattern ${artifactPath}`)
         const bundleMetaFile = this.getBundleMetaFile(bundle)
 
         const globber = await glob.create(artifactPath, {
@@ -207,6 +208,7 @@ export class GradleUserHomeCache extends AbstractCache {
         artifactPath: string,
         listener: CacheEntryListener
     ): Promise<void> {
+        core.info(`Saving artifact SINGLES ${bundle} with pattern ${artifactPath}`)
         const bundleMetaFile = this.getBundleMetaFile(bundle)
 
         const globber = await glob.create(artifactPath, {
@@ -235,6 +237,7 @@ export class GradleUserHomeCache extends AbstractCache {
         for (const bundleFile of bundleFiles) {
             const cacheKey = this.createCacheKey(bundle, [bundleFile])
             newCacheKeys.push(cacheKey)
+            core.info(`Saving artifact ${bundleFile} with key ${cacheKey}`)
 
             if (previouslyRestoredKeys.includes(cacheKey)) {
                 this.debug(`No change to previously restored ${bundle}. Not caching.`)
