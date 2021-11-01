@@ -44,13 +44,18 @@ export async function run(): Promise<void> {
         const repo = process.env['GITHUB_REPOSITORY']
         const sha = process.env['GITHUB_SHA']
         const job = process.env['GITHUB_JOB']
-        const resp = await new Octokit().request(`POST /repos/${repo}/check-runs`, {
-            name: `Gradle Build ${job}`,
-            head_sha: sha,
-            status: 'completed',
-            conclusion: 'neutral'
-        })
-        core.info(JSON.stringify(resp.data))
+        const token = process.env['GITHUB_TOKEN']
+
+        if (token) {
+            const resp = await new Octokit().request(`POST /repos/${repo}/check-runs`, {
+                name: `Gradle Build ${job}`,
+                head_sha: sha,
+                status: 'completed',
+                conclusion: result.status === 0 ? 'neutral' : 'action_required',
+                details_url: result.buildScanUrl
+            })
+            core.info(JSON.stringify(resp.data))
+        }
     } catch (error) {
         core.setFailed(String(error))
         if (error instanceof Error && error.stack) {
