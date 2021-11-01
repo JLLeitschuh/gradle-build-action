@@ -146,6 +146,7 @@ export class GradleUserHomeCache extends AbstractCache {
         for (const [bundle, pattern] of this.getArtifactBundles()) {
             const entryListener = listener.entry(bundle)
 
+            core.info(`Deciding what to do for ${bundle} and ${pattern} since ${pattern.endsWith('/')}`)
             const p = pattern.endsWith('/')
                 ? this.saveArtifactBundle(bundle, pattern, entryListener)
                 : this.saveArtifactSingles(bundle, pattern, entryListener)
