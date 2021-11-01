@@ -51,8 +51,13 @@ export async function run(): Promise<void> {
                 name: `Gradle Build ${job}`,
                 head_sha: sha,
                 status: 'completed',
-                conclusion: result.status === 0 ? 'neutral' : 'action_required',
-                details_url: result.buildScanUrl
+                conclusion: result.status === 0 ? 'neutral' : 'failure',
+                output: {
+                    title: `GB ${job}`,
+                    summary: result.buildScanUrl
+                        ? `[Build scan](${result.buildScanUrl})`
+                        : 'Get better results with a [Build Scan](https://scans.gradle.com)'
+                }
             })
             core.info(JSON.stringify(resp.data))
         }
