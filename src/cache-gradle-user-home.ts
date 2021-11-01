@@ -46,7 +46,9 @@ export class GradleUserHomeCache extends AbstractCache {
                 entryListener.markRequested('BUNDLE_NOT_CONFIGURED')
                 tryDelete(bundleMetaFile)
             } else {
-                const p = this.restoreArtifactBundle(bundle, bundlePattern, bundleMetaFile, entryListener)
+                const p = bundlePattern.endsWith('/')
+                    ? this.restoreArtifactBundle(bundle, bundlePattern, bundleMetaFile, entryListener)
+                    : this.restoreArtifactSingles(bundle, bundlePattern, bundleMetaFile, entryListener)
                 // Run sequentially when debugging enabled
                 if (this.cacheDebuggingEnabled) {
                     await p
@@ -74,6 +76,38 @@ export class GradleUserHomeCache extends AbstractCache {
         } else {
             core.info(`Did not restore ${bundle} with key ${cacheKey} to ${bundlePattern}`)
             tryDelete(bundleMetaFile)
+        }
+    }
+
+    private async restoreArtifactSingles(
+        bundle: string,
+        bundlePattern: string,
+        bundleMetaFile: string,
+        listener: CacheEntryListener
+    ): Promise<void> {
+        const cacheKeys = fs
+            .readFileSync(bundleMetaFile, 'utf-8')
+            .split(',')
+            .map(x => x.trim())
+
+        const restoredKeys = []
+        for (const cacheKey of cacheKeys) {
+            listener.markRequested(cacheKey)
+
+            const restoredEntry = await this.restoreCache([bundlePattern], cacheKey)
+            if (restoredEntry) {
+                core.info(`Restored ${bundle} with key ${cacheKey} to ${bundlePattern}`)
+                listener.markRestored(restoredEntry.key, restoredEntry.size)
+                restoredKeys.push(restoredEntry.key)
+            } else {
+                core.info(`Did not restore ${bundle} with key ${cacheKey} to ${bundlePattern}`)
+            }
+        }
+
+        if (restoredKeys.length === 0) {
+            tryDelete(bundleMetaFile)
+        } else {
+            this.writeBundleMetaFile(bundleMetaFile, restoredKeys.join(','))
         }
     }
 
@@ -112,7 +146,9 @@ export class GradleUserHomeCache extends AbstractCache {
         for (const [bundle, pattern] of this.getArtifactBundles()) {
             const entryListener = listener.entry(bundle)
 
-            const p = this.saveArtifactBundle(bundle, pattern, entryListener)
+            const p = pattern.endsWith('/')
+                ? this.saveArtifactBundle(bundle, pattern, entryListener)
+                : this.saveArtifactSingles(bundle, pattern, entryListener)
             // Run sequentially when debugging enabled
             if (this.cacheDebuggingEnabled) {
                 await p
@@ -164,6 +200,56 @@ export class GradleUserHomeCache extends AbstractCache {
         for (const file of bundleFiles) {
             tryDelete(file)
         }
+    }
+
+    private async saveArtifactSingles(
+        bundle: string,
+        artifactPath: string,
+        listener: CacheEntryListener
+    ): Promise<void> {
+        const bundleMetaFile = this.getBundleMetaFile(bundle)
+
+        const globber = await glob.create(artifactPath, {
+            implicitDescendants: false,
+            followSymbolicLinks: false
+        })
+        const bundleFiles = await globber.glob()
+
+        // Handle no matching files
+        if (bundleFiles.length === 0) {
+            this.debug(`No files found to cache for ${bundle}`)
+            if (fs.existsSync(bundleMetaFile)) {
+                tryDelete(bundleMetaFile)
+            }
+            return
+        }
+
+        const previouslyRestoredKeys = fs.existsSync(bundleMetaFile)
+            ? fs
+                  .readFileSync(bundleMetaFile, 'utf-8')
+                  .split(',')
+                  .map(x => x.trim())
+            : []
+
+        const newCacheKeys = []
+        for (const bundleFile of bundleFiles) {
+            const cacheKey = this.createCacheKey(bundle, [bundleFile])
+            newCacheKeys.push(cacheKey)
+
+            if (previouslyRestoredKeys.includes(cacheKey)) {
+                this.debug(`No change to previously restored ${bundle}. Not caching.`)
+            } else {
+                core.info(`Caching ${bundleFile} with cache key: ${cacheKey}`)
+                const savedEntry = await this.saveCache([artifactPath], cacheKey)
+                if (savedEntry !== undefined) {
+                    listener.markSaved(savedEntry.key, savedEntry.size)
+                }
+            }
+
+            tryDelete(bundleFile)
+        }
+
+        this.writeBundleMetaFile(bundleMetaFile, newCacheKeys.join(','))
     }
 
     protected createCacheKey(bundle: string, files: string[]): string {
