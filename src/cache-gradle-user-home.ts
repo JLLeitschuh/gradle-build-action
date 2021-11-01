@@ -46,7 +46,7 @@ export class GradleUserHomeCache extends AbstractCache {
                 entryListener.markRequested('BUNDLE_NOT_CONFIGURED')
                 tryDelete(bundleMetaFile)
             } else {
-                const p = bundlePattern.endsWith('/')
+                const p = bundlePattern.endsWith('*')
                     ? this.restoreArtifactBundle(bundle, bundlePattern, bundleMetaFile, entryListener)
                     : this.restoreArtifactSingles(bundle, bundlePattern, bundleMetaFile, entryListener)
                 // Run sequentially when debugging enabled
@@ -146,8 +146,7 @@ export class GradleUserHomeCache extends AbstractCache {
         for (const [bundle, pattern] of this.getArtifactBundles()) {
             const entryListener = listener.entry(bundle)
 
-            core.info(`Deciding what to do for ${bundle} and ${pattern} since ${pattern.endsWith('/')}`)
-            const p = pattern.endsWith('/')
+            const p = pattern.endsWith('*')
                 ? this.saveArtifactBundle(bundle, pattern, entryListener)
                 : this.saveArtifactSingles(bundle, pattern, entryListener)
             // Run sequentially when debugging enabled
